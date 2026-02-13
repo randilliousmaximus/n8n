@@ -32,22 +32,25 @@ Before implementation, confirm whether the LangChain package version used by the
 
 ### 2.1 Do we need to add npm packages?
 
-Short answer: **likely yes, but package choice depends on upstream support status**.
+Short answer: **yes, most likely in `@n8n/nodes-langchain`**.
 
 - Current repo state in `packages/@n8n/nodes-langchain/package.json`:
   - has `@langchain/aws`
   - does **not** have a direct S3 or S3 Vectors AWS SDK client dependency
 - `@aws-sdk/client-s3` exists in `packages/core/package.json`, but that does not guarantee it should be imported from `@n8n/nodes-langchain` (keep package boundaries explicit).
 
-Recommended dependency decision tree:
+Research findings (as of 2026-02-13):
 
-1. If LangChain adds native Amazon S3 Vectors support:
-   - Prefer upgrading/using the LangChain package that exposes it.
-   - Add/update only the LangChain package versions needed.
-2. If no native LangChain vector store exists yet:
-   - Add the official AWS SDK client package for Amazon S3 Vectors (once publicly available and stable).
-   - If AWS only exposes S3 Vectors through existing `@aws-sdk/client-s3` APIs, add/use that package directly in `@n8n/nodes-langchain` instead.
-3. Do **not** pre-add speculative package names (for example `@aws-sdk/client-<service-name>`) until confirmed in AWS docs/npm.
+1. **LangChain JS**: no native Amazon S3 Vectors integration found in `langchain-ai/langchainjs` (searches for `s3vectors` and `AmazonS3Vectors` return no matches).
+2. **AWS SDK JS v3**: official package exists as **`@aws-sdk/client-s3vectors`**.
+   - The npm registry has this package.
+   - `aws/aws-sdk-js-v3` includes `clients/client-s3vectors` with commands like `QueryVectorsCommand`.
+
+Recommended dependency decision:
+
+1. Add `@aws-sdk/client-s3vectors` to `packages/@n8n/nodes-langchain/package.json`.
+2. Implement the vector store adapter/node using that client.
+3. Continue to monitor LangChain JS; if native support appears later, evaluate replacing custom adapter with official LangChain integration.
 
 ## 3) Recommended implementation path (minimal + aligned to existing patterns)
 
