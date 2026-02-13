@@ -6,15 +6,15 @@ This report describes what it would take to add support for **AWS S3 Vectors** t
 
 The vector store implementation lives in:
 
-- `/home/runner/work/n8n/n8n/packages/@n8n/nodes-langchain/nodes/vector_store/`
+- `packages/@n8n/nodes-langchain/nodes/vector_store/`
 - Shared factory + operation handling:
-  - `/home/runner/work/n8n/n8n/packages/@n8n/nodes-langchain/nodes/vector_store/shared/createVectorStoreNode/createVectorStoreNode.ts`
-  - `/home/runner/work/n8n/n8n/packages/@n8n/nodes-langchain/nodes/vector_store/shared/createVectorStoreNode/types.ts`
+  - `packages/@n8n/nodes-langchain/nodes/vector_store/shared/createVectorStoreNode/createVectorStoreNode.ts`
+  - `packages/@n8n/nodes-langchain/nodes/vector_store/shared/createVectorStoreNode/types.ts`
 
 Current providers (examples) include PGVector and Redis:
 
-- `/home/runner/work/n8n/n8n/packages/@n8n/nodes-langchain/nodes/vector_store/VectorStorePGVector/VectorStorePGVector.node.ts`
-- `/home/runner/work/n8n/n8n/packages/@n8n/nodes-langchain/nodes/vector_store/VectorStoreRedis/VectorStoreRedis.node.ts`
+- `packages/@n8n/nodes-langchain/nodes/vector_store/VectorStorePGVector/VectorStorePGVector.node.ts`
+- `packages/@n8n/nodes-langchain/nodes/vector_store/VectorStoreRedis/VectorStoreRedis.node.ts`
 
 These nodes are all built with `createVectorStoreNode(...)` and implement provider-specific logic in:
 
@@ -26,7 +26,9 @@ These nodes are all built with `createVectorStoreNode(...)` and implement provid
 
 There is currently no S3 Vectors node and no S3 Vectors references in the repo.
 
-Before implementation, confirm whether the LangChain package version used by the repo already includes a production-ready S3 Vectors vector store class. If not, implement a small adapter that conforms to the LangChain `VectorStore` contract and uses the AWS SDK client for S3 Vectors APIs.
+This report assumes the target is AWS's newly announced **Amazon S3 Vectors** capability. Before coding, confirm the exact public SDK/service naming used by AWS documentation and package names, then align class/file names accordingly.
+
+Before implementation, confirm whether the LangChain package version used by the repo already includes a production-ready Amazon S3 Vectors class. If not, implement a small adapter that conforms to the LangChain `VectorStore` contract and uses the AWS SDK client for Amazon S3 Vectors APIs.
 
 ## 3) Recommended implementation path (minimal + aligned to existing patterns)
 
@@ -34,11 +36,11 @@ Before implementation, confirm whether the LangChain package version used by the
 
 Add a new node folder:
 
-- `/home/runner/work/n8n/n8n/packages/@n8n/nodes-langchain/nodes/vector_store/VectorStoreS3Vectors/`
+- `packages/@n8n/nodes-langchain/nodes/vector_store/VectorStoreAwsS3Vectors/`
 
 Create:
 
-- `VectorStoreS3Vectors.node.ts`
+- `VectorStoreAwsS3Vectors.node.ts`
 - provider icon file (for example `s3.svg`) in the same folder
 
 Use the same pattern as PGVector/Redis:
@@ -66,11 +68,11 @@ If additional auth fields are required, add a dedicated credential type and regi
 
 Update:
 
-- `/home/runner/work/n8n/n8n/packages/@n8n/nodes-langchain/package.json`
+- `packages/@n8n/nodes-langchain/package.json`
 
 Add to `n8n.nodes`:
 
-- `dist/nodes/vector_store/VectorStoreS3Vectors/VectorStoreS3Vectors.node.js`
+- `dist/nodes/vector_store/VectorStoreAwsS3Vectors/VectorStoreAwsS3Vectors.node.js`
 
 If a new credential was created, also add it to `n8n.credentials`.
 
@@ -90,7 +92,7 @@ Start with `insert`, `load`, and `retrieve` as MVP. Add `update` only when S3 Ve
 
 Add unit tests mirroring existing vector store tests:
 
-- `/home/runner/work/n8n/n8n/packages/@n8n/nodes-langchain/nodes/vector_store/VectorStoreS3Vectors/VectorStoreS3Vectors.node.test.ts`
+- `packages/@n8n/nodes-langchain/nodes/vector_store/VectorStoreAwsS3Vectors/VectorStoreAwsS3Vectors.node.test.ts`
 
 Test at minimum:
 
@@ -101,11 +103,11 @@ Test at minimum:
 
 ## 4) Concrete file-level checklist
 
-- [ ] Add `VectorStoreS3Vectors.node.ts`
+- [ ] Add `VectorStoreAwsS3Vectors.node.ts` (or final AWS official service-aligned name)
 - [ ] Add icon file for node UI
 - [ ] Register node in `packages/@n8n/nodes-langchain/package.json`
 - [ ] (Optional) add S3-specific credential type + register in same package.json
-- [ ] Add `VectorStoreS3Vectors.node.test.ts`
+- [ ] Add `VectorStoreAwsS3Vectors.node.test.ts` (or final AWS official service-aligned name)
 - [ ] Add docs URL target for the new node page
 
 ## 5) Implementation notes to avoid rework
@@ -120,20 +122,20 @@ Test at minimum:
 
 Run from:
 
-- `/home/runner/work/n8n/n8n/packages/@n8n/nodes-langchain`
+- `packages/@n8n/nodes-langchain`
 
 Commands:
 
 ```bash
 corepack pnpm lint
 corepack pnpm typecheck
-corepack pnpm test nodes/vector_store/VectorStoreS3Vectors/VectorStoreS3Vectors.node.test.ts
+corepack pnpm test nodes/vector_store/VectorStoreAwsS3Vectors/VectorStoreAwsS3Vectors.node.test.ts
 ```
 
 If cross-package type breakage appears, run from repo root:
 
 ```bash
-cd /home/runner/work/n8n/n8n
+cd <repo-root>
 corepack pnpm build > build.log 2>&1
 tail -n 20 build.log
 ```
@@ -145,4 +147,3 @@ tail -n 20 build.log
 - Documentation and review iteration: ~0.5 day
 
 Total: typically **1.5 to 3 days**, depending on maturity of AWS S3 Vectors SDK/LangChain support.
-
