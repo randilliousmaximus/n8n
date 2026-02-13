@@ -30,6 +30,25 @@ This report assumes the target is AWS's newly announced **Amazon S3 Vectors** ca
 
 Before implementation, confirm whether the LangChain package version used by the repo already includes a production-ready Amazon S3 Vectors class. If not, implement a small adapter that conforms to the LangChain `VectorStore` contract and uses the AWS SDK client for Amazon S3 Vectors APIs.
 
+### 2.1 Do we need to add npm packages?
+
+Short answer: **likely yes, but package choice depends on upstream support status**.
+
+- Current repo state in `packages/@n8n/nodes-langchain/package.json`:
+  - has `@langchain/aws`
+  - does **not** have a direct S3 or S3 Vectors AWS SDK client dependency
+- `@aws-sdk/client-s3` exists in `packages/core/package.json`, but that does not guarantee it should be imported from `@n8n/nodes-langchain` (keep package boundaries explicit).
+
+Recommended dependency decision tree:
+
+1. If LangChain adds native Amazon S3 Vectors support:
+   - Prefer upgrading/using the LangChain package that exposes it.
+   - Add/update only the LangChain package versions needed.
+2. If no native LangChain vector store exists yet:
+   - Add the official AWS SDK client package for Amazon S3 Vectors (once publicly available and stable).
+   - If AWS only exposes S3 Vectors through existing `@aws-sdk/client-s3` APIs, add/use that package directly in `@n8n/nodes-langchain` instead.
+3. Do **not** pre-add speculative package names (for example `@aws-sdk/client-<service-name>`) until confirmed in AWS docs/npm.
+
 ## 3) Recommended implementation path (minimal + aligned to existing patterns)
 
 ### Step A — Create a new vector store node
